@@ -40,26 +40,11 @@ function GuestLoadingController(
 		$rootScope.loadingPromise = SqlLiteService.loadData();
 		$rootScope.loadingPromise
 			.then(() => {
-				startTokenPriceUpdaterListener();
 				goTo('guest.welcome');
 			})
 			.catch(error => {
 				$log.error('error', error);
 			});
-	}
-
-	$rootScope.$on('$destroy', () => {
-		stopTokenPriceUpdaterListener();
-	});
-
-	function startTokenPriceUpdaterListener() {
-		tokenPriceUpdaterInterval = $interval(() => {
-			SqlLiteService.loadTokenPrices();
-		}, 10000);
-	}
-
-	function stopTokenPriceUpdaterListener() {
-		$interval.cancel(tokenPriceUpdaterInterval);
 	}
 
 	function goTo(state) {
