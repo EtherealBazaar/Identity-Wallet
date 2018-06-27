@@ -72,7 +72,7 @@ module.exports = function(app, sqlLiteService) {
 									// add initial id attributes
 									idAttributesSavePromises.push(
 										sqlLiteService
-											.insertIntoTable('id_attributes', item, trx)
+											.insertAndSelect('id_attributes', item, trx)
 											.catch(error => {
 												console.log(error);
 											})
@@ -126,7 +126,7 @@ module.exports = function(app, sqlLiteService) {
 
 					// add wallet settings
 					promises.push(
-						sqlLiteService.insertIntoTable(
+						sqlLiteService.insertAndSelect(
 							'wallet_settings',
 							{
 								walletId: id,
@@ -139,7 +139,7 @@ module.exports = function(app, sqlLiteService) {
 
 					// add wallet tokens
 					promises.push(
-						sqlLiteService.insertIntoTable(
+						sqlLiteService.insertAndSelect(
 							'wallet_tokens',
 							{ walletId: id, tokenId: 1, createdAt: new Date().getTime() },
 							trx
@@ -268,7 +268,7 @@ module.exports = function(app, sqlLiteService) {
 													);
 												} else {
 													finalPromises.push(
-														sqlLiteService.insertIntoTable(
+														sqlLiteService.insertAndSelect(
 															'id_attributes',
 															idAttribute,
 															trx

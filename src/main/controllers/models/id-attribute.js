@@ -344,7 +344,7 @@ module.exports = function(app, sqlLiteService) {
 
 									documentsSavePromises.push(
 										sqlLiteService
-											.insertIntoTable('documents', document, trx)
+											.insertAndSelect('documents', document, trx)
 											.then(document => {
 												idAttributeItemValue.documentId = document.id;
 												idAttributeItemValue.documentName = document.name;
@@ -388,7 +388,7 @@ module.exports = function(app, sqlLiteService) {
 										delete itemsToSave[i].tempId;
 										itemsToSave[i].items = JSON.stringify(itemsToSave[i].items);
 										idAttributesSavePromises.push(
-											sqlLiteService.insertIntoTable(
+											sqlLiteService.insertAndSelect(
 												'id_attributes',
 												itemsToSave[i],
 												trx

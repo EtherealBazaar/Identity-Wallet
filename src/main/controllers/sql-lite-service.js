@@ -13,7 +13,7 @@ module.exports = function(app) {
 	 */
 	controller.knex = knex;
 
-	controller.insertIntoTable = sqlUtil.insertIntoTable;
+	controller.insertAndSelect = sqlUtil.insertAndSelect;
 	controller.select = sqlUtil.select;
 	controller.insert = sqlUtil.insert;
 	controller.insertAndSelect = sqlUtil.insertAndSelect;
@@ -73,7 +73,7 @@ module.exports = function(app) {
 						.then(resp => {
 							let id = resp[0];
 							// add wallet tokens
-							return sqlUtil.insertIntoTable(
+							return sqlUtil.insertAndSelect(
 								'wallet_tokens',
 								{
 									walletId: walletId,
@@ -170,7 +170,7 @@ module.exports = function(app) {
 
 		return new Promise((resolve, reject) => {
 			sqlUtil
-				.insertIntoTable('wallet_tokens', data)
+				.insertAndSelect('wallet_tokens', data)
 				.then(rowData => {
 					walletTokens_selectById(rowData.id)
 						.then(walletData => {
@@ -199,7 +199,7 @@ module.exports = function(app) {
 	};
 
 	controller.prototype.token_insert = data => {
-		return sqlUtil.insertIntoTable('tokens', data);
+		return sqlUtil.insertAndSelect('tokens', data);
 	};
 
 	controller.prototype.token_update = data => {
@@ -207,7 +207,7 @@ module.exports = function(app) {
 	};
 
 	controller.prototype.transactionsHistory_insert = data => {
-		return sqlUtil.insertIntoTable('transactions_history', data);
+		return sqlUtil.insertAndSelect('transactions_history', data);
 	};
 
 	return controller;
