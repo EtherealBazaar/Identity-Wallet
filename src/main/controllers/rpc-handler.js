@@ -3,6 +3,19 @@
 const electron = require('electron');
 const { dialog, Notification, shell, autoUpdater } = require('electron');
 
+const Wallet = require('./models/wallet');
+const IdAttribute = require('./models/id-attribute');
+const IdAttributeType = require('./models/id-attribute-type');
+const Document = require('./models/document');
+const ActionLog = require('./models/action-log');
+const Token = require('./models/token');
+const WalletToken = require('./models/wallet-token');
+const Country = require('./models/country');
+const TransactionHistory = require('./models/transaction-history');
+const WalletSetting = require('./models/wallet-setting');
+const GuideSetting = require('./models/guide-setting');
+const Exchange = require('./models/exchange');
+
 const path = require('path');
 const fs = require('fs-extra');
 const fsm = require('fs');
@@ -72,7 +85,7 @@ module.exports = function(app) {
 			let keystoreFileName = path.basename(outputPath);
 			let keystoreFilePath = path.join(keystoreObject.address, keystoreFileName);
 
-			electron.app.sqlLiteService.Wallet.add({
+			Wallet.create({
 				publicKey: keystoreObject.address,
 				keystoreFilePath: keystoreFilePath
 			})
@@ -123,7 +136,7 @@ module.exports = function(app) {
 							);
 						}
 
-						electron.app.sqlLiteService.Wallet.add({
+						Wallet.create({
 							publicKey: keystoreObject.address,
 							keystoreFilePath: ksFilePathToSave
 						})
@@ -177,9 +190,7 @@ module.exports = function(app) {
 	// refactored
 	controller.prototype.unlockKeystoreFile = function(event, actionId, actionName, args) {
 		try {
-			let selectWalletPromise = electron.app.sqlLiteService.Wallet.findByPublicKey(
-				args.publicKey
-			);
+			let selectWalletPromise = Wallet.findByPublicKey(args.publicKey);
 			selectWalletPromise
 				.then(wallet => {
 					let keystoreFileName = path.basename(wallet.keystoreFilePath);
@@ -226,7 +237,7 @@ module.exports = function(app) {
 			publicKey = publicKey.toString('hex');
 
 			let privateKeyBuffer = Buffer.from(args.privateKey.replace('0x', ''), 'hex');
-			let walletSelectPromise = electron.app.sqlLiteService.Wallet.findByPublicKey(publicKey);
+			let walletSelectPromise = Wallet.findByPublicKey(publicKey);
 			let profile = 'local';
 
 			walletSelectPromise
@@ -235,7 +246,7 @@ module.exports = function(app) {
 						wallet.privateKey = privateKeyBuffer;
 						app.win.webContents.send(RPC_METHOD, actionId, actionName, null, wallet);
 					} else {
-						electron.app.sqlLiteService.Wallet.add({
+						Wallet.create({
 							profile,
 							publicKey
 						})
@@ -378,7 +389,7 @@ module.exports = function(app) {
 									size: stats.size
 								};
 
-								electron.app.sqlLiteService.IdAttribute.addEditDocumentToIdAttributeItemValue(
+								IdAttribute.addEditDocumentToIdAttributeItemValue(
 									args.idAttributeId,
 									args.idAttributeItemId,
 									args.idAttributeItemValueId,
@@ -429,7 +440,7 @@ module.exports = function(app) {
 				}
 			}
 
-			electron.app.sqlLiteService.Document.findById(args.documentId)
+			Document.findById(args.documentId)
 				.then(data => {
 					const filePathToPreview = path.join(documentsDirectoryPath, data.name);
 
@@ -582,7 +593,7 @@ module.exports = function(app) {
 	 * sql-lite methods
 	 */
 	controller.prototype.loadDocumentById = function(event, actionId, actionName, args) {
-		electron.app.sqlLiteService.Document.findById(args.documentId)
+		Document.findById(args.documentId)
 			.then(data => {
 				app.win.webContents.send(RPC_METHOD, actionId, actionName, null, data);
 			})
@@ -593,7 +604,7 @@ module.exports = function(app) {
 	};
 
 	controller.prototype.actionLogs_add = function(event, actionId, actionName, args) {
-		electron.app.sqlLiteService.ActionLog.add(args)
+		ActionLog.create(args)
 			.then(data => {
 				app.win.webContents.send(RPC_METHOD, actionId, actionName, null, data);
 			})
@@ -605,7 +616,7 @@ module.exports = function(app) {
 
 	// TODO - rename actionLogs_findByWalletId
 	controller.prototype.actionLogs_findAll = function(event, actionId, actionName, args) {
-		electron.app.sqlLiteService.ActionLog.findByWalletId(args.walletId)
+		ActionLog.findByWalletId(args.walletId)
 			.then(data => {
 				app.win.webContents.send(RPC_METHOD, actionId, actionName, null, data);
 			})
@@ -784,7 +795,7 @@ module.exports = function(app) {
 
 							// ready - requiredDocuments, requiredStaticData, exportCode
 
-							electron.app.sqlLiteService.IdAttribute.addImportedIdAttributes(
+							IdAttribute.addImportedIdAttributes(
 								args.walletId,
 								exportCode,
 								requiredDocuments,
@@ -836,8 +847,9 @@ module.exports = function(app) {
 	 * SQL Lite
 	 */
 	controller.prototype.getIdAttributeTypes = function(event, actionId, actionName, args) {
-		electron.app.sqlLiteService.IdAttributeType.findAll()
+		IdAttributeType.findAll()
 			.then(data => {
+				console.log('id attribute type', data);
 				app.win.webContents.send(RPC_METHOD, actionId, actionName, null, data);
 			})
 			.catch(error => {
@@ -846,7 +858,7 @@ module.exports = function(app) {
 	};
 
 	controller.prototype.getTokens = function(event, actionId, actionName, args) {
-		electron.app.sqlLiteService.Token.findAll()
+		Token.findAll()
 			.then(data => {
 				app.win.webContents.send(RPC_METHOD, actionId, actionName, null, data);
 			})
@@ -856,7 +868,7 @@ module.exports = function(app) {
 	};
 
 	controller.prototype.saveWallet = function(event, actionId, actionName, args) {
-		electron.app.sqlLiteService.Wallet.add(args)
+		Wallet.create(args)
 			.then(data => {
 				app.win.webContents.send(RPC_METHOD, actionId, actionName, null, data);
 			})
@@ -866,7 +878,7 @@ module.exports = function(app) {
 	};
 
 	controller.prototype.findActiveWallets = function(event, actionId, actionName, args) {
-		electron.app.sqlLiteService.Wallet.findActive()
+		Wallet.findActive()
 			.then(data => {
 				app.win.webContents.send(RPC_METHOD, actionId, actionName, null, data);
 			})
@@ -876,7 +888,7 @@ module.exports = function(app) {
 	};
 
 	controller.prototype.findAllWallets = function(event, actionId, actionName, args) {
-		electron.app.sqlLiteService.Wallet.findAll()
+		Wallet.findAll()
 			.then(data => {
 				app.win.webContents.send(RPC_METHOD, actionId, actionName, null, data);
 			})
@@ -886,7 +898,7 @@ module.exports = function(app) {
 	};
 
 	controller.prototype.updateWalletprofilePicture = function(event, actionId, actionName, args) {
-		electron.app.sqlLiteService.Wallet.updateProfilePicture(args)
+		Wallet.updateProfilePicture(args)
 			.then(data => {
 				app.win.webContents.send(RPC_METHOD, actionId, actionName, null, data);
 			})
@@ -896,7 +908,7 @@ module.exports = function(app) {
 	};
 
 	controller.prototype.getWalletProfilePicture = function(event, actionId, actionName, args) {
-		electron.app.sqlLiteService.Wallet.selectProfilePictureById(args)
+		Wallet.selectProfilePictureById(args)
 			.then(data => {
 				app.win.webContents.send(RPC_METHOD, actionId, actionName, null, data);
 			})
@@ -906,8 +918,7 @@ module.exports = function(app) {
 	};
 
 	controller.prototype.getWalletByPublicKey = function(event, actionId, actionName, args) {
-		electron.app.sqlLiteService
-			.wallets_selectByPublicKey(args.publicKey)
+		Wallet.findByPublicKey(args.publicKey)
 			.then(data => {
 				app.win.webContents.send(RPC_METHOD, actionId, actionName, null, data);
 			})
@@ -917,7 +928,7 @@ module.exports = function(app) {
 	};
 
 	controller.prototype.getCountries = function(event, actionId, actionName, args) {
-		electron.app.sqlLiteService.Country.findAll()
+		Country.findAll()
 			.then(data => {
 				app.win.webContents.send(RPC_METHOD, actionId, actionName, null, data);
 			})
@@ -927,7 +938,7 @@ module.exports = function(app) {
 	};
 
 	controller.prototype.getWalletSettingsByWalletId = function(event, actionId, actionName, args) {
-		electron.app.sqlLiteService.WalletSetting.findByWalletId(args)
+		WalletSetting.findByWalletId(args)
 			.then(data => {
 				app.win.webContents.send(RPC_METHOD, actionId, actionName, null, data);
 			})
@@ -937,7 +948,7 @@ module.exports = function(app) {
 	};
 
 	controller.prototype.saveWalletSettings = function(event, actionId, actionName, args) {
-		electron.app.sqlLiteService.WalletSetting.updateById(args.id, args)
+		WalletSetting.updateById(args.id, args)
 			.then(data => {
 				app.win.webContents.send(RPC_METHOD, actionId, actionName, null, data);
 			})
@@ -947,8 +958,7 @@ module.exports = function(app) {
 	};
 
 	controller.prototype.insertWalletToken = function(event, actionId, actionName, args) {
-		electron.app.sqlLiteService
-			.wallet_tokens_insert(args)
+		WalletToken.create(args)
 			.then(data => {
 				app.win.webContents.send(RPC_METHOD, actionId, actionName, null, data);
 			})
@@ -958,8 +968,7 @@ module.exports = function(app) {
 	};
 
 	controller.prototype.insertNewWalletToken = function(event, actionId, actionName, args) {
-		electron.app.sqlLiteService
-			.wallet_new_token_insert(args.data, args.balance, args.walletId)
+		WalletToken.createWithNewToken(args.data, args.balance, args.walletId)
 			.then(data => {
 				app.win.webContents.send(RPC_METHOD, actionId, actionName, null, data);
 			})
@@ -969,8 +978,7 @@ module.exports = function(app) {
 	};
 
 	controller.prototype.updateWalletToken = function(event, actionId, actionName, args) {
-		electron.app.sqlLiteService
-			.wallet_tokens_update(args)
+		WalletToken.update(args)
 			.then(data => {
 				app.win.webContents.send(RPC_METHOD, actionId, actionName, null, data);
 			})
@@ -980,7 +988,7 @@ module.exports = function(app) {
 	};
 
 	controller.prototype.getGuideSettings = function(event, actionId, actionName, args) {
-		electron.app.sqlLiteService.GuideSetting.findAll()
+		GuideSetting.findAll()
 			.then(data => {
 				app.win.webContents.send(RPC_METHOD, actionId, actionName, null, data);
 			})
@@ -990,7 +998,7 @@ module.exports = function(app) {
 	};
 
 	controller.prototype.saveGuideSettings = function(event, actionId, actionName, args) {
-		electron.app.sqlLiteService.GuideSetting.updateById(args.id, args)
+		GuideSetting.updateById(args.id, args)
 			.then(data => {
 				app.win.webContents.send(RPC_METHOD, actionId, actionName, null, data);
 			})
@@ -1001,8 +1009,7 @@ module.exports = function(app) {
 	};
 
 	controller.prototype.getWalletTokens = function(event, actionId, actionName, args) {
-		electron.app.sqlLiteService
-			.walletTokens_selectByWalletId(args.walletId)
+		WalletToken.findByWalletId(args.walletId)
 			.then(data => {
 				app.win.webContents.send(RPC_METHOD, actionId, actionName, null, data);
 			})
@@ -1021,10 +1028,7 @@ module.exports = function(app) {
 		actionName,
 		args
 	) {
-		electron.app.sqlLiteService.Wallet.addInitialIdAttributesAndActivate(
-			args.walletId,
-			args.initialIdAttributesValues
-		)
+		Wallet.addInitialIdAttributesAndActivate(args.walletId, args.initialIdAttributesValues)
 			.then(data => {
 				app.win.webContents.send(RPC_METHOD, actionId, actionName, null, data);
 			})
@@ -1040,7 +1044,7 @@ module.exports = function(app) {
 		actionName,
 		args
 	) {
-		electron.app.sqlLiteService.IdAttribute.addEditDocumentToIdAttributeItemValue(
+		IdAttribute.addEditDocumentToIdAttributeItemValue(
 			args.idAttributeId,
 			args.idAttributeItemId,
 			args.idAttributeItemValueId,
@@ -1061,7 +1065,7 @@ module.exports = function(app) {
 		actionName,
 		args
 	) {
-		electron.app.sqlLiteService.IdAttribute.addEditStaticDataToIdAttributeItemValue(
+		IdAttribute.addEditStaticDataToIdAttributeItemValue(
 			args.idAttributeId,
 			args.idAttributeItemId,
 			args.idAttributeItemValueId,
@@ -1077,7 +1081,7 @@ module.exports = function(app) {
 
 	// DONE !!!!!
 	controller.prototype.getIdAttributes = function(event, actionId, actionName, args) {
-		electron.app.sqlLiteService.IdAttribute.findAllByWalletId(args.walletId)
+		IdAttribute.findAllByWalletId(args.walletId)
 			.then(data => {
 				app.win.webContents.send(RPC_METHOD, actionId, actionName, null, data);
 			})
@@ -1088,12 +1092,7 @@ module.exports = function(app) {
 
 	// DONE !!!!!
 	controller.prototype.addIdAttribute = function(event, actionId, actionName, args) {
-		electron.app.sqlLiteService.IdAttribute.create(
-			args.walletId,
-			args.idAttributeType,
-			args.staticData,
-			args.file
-		)
+		IdAttribute.create(args.walletId, args.idAttributeType, args.staticData, args.file)
 			.then(data => {
 				app.win.webContents.send(RPC_METHOD, actionId, actionName, null, data);
 			})
@@ -1104,11 +1103,7 @@ module.exports = function(app) {
 
 	// DONE !!!!!
 	controller.prototype.deleteIdAttribute = function(event, actionId, actionName, args) {
-		electron.app.sqlLiteService.IdAttribute.delete(
-			args.idAttributeId,
-			args.idAttributeItemId,
-			args.idAttributeItemValueId
-		)
+		IdAttribute.delete(args.idAttributeId, args.idAttributeItemId, args.idAttributeItemValueId)
 			.then(data => {
 				app.win.webContents.send(RPC_METHOD, actionId, actionName, null, data);
 			})
@@ -1119,10 +1114,7 @@ module.exports = function(app) {
 
 	// TODO .... test
 	controller.prototype.editImportedIdAttributes = function(event, actionId, actionName, args) {
-		electron.app.sqlLiteService.Wallet.editImportedIdAttributes(
-			args.walletId,
-			args.initialIdAttributesValues
-		)
+		Wallet.editImportedIdAttributes(args.walletId, args.initialIdAttributesValues)
 			.then(data => {
 				app.win.webContents.send(RPC_METHOD, actionId, actionName, null, data);
 			})
@@ -1135,7 +1127,7 @@ module.exports = function(app) {
 	 * Exchange data
 	 */
 	controller.prototype.findAllExchangeData = function(event, actionId, actionName, args) {
-		electron.app.sqlLiteService.ExchangeDataHandler.findAll(args)
+		Exchange.findAll(args)
 			.then(data => {
 				app.win.webContents.send(RPC_METHOD, actionId, actionName, null, data);
 			})
@@ -1149,8 +1141,7 @@ module.exports = function(app) {
 		async.each(
 			iconList,
 			function(item, callback) {
-				electron.app.sqlLiteService
-					.tokens_selectBySymbol(item)
+				Token.findBySymbol(item)
 					.then(data => {
 						if (data) {
 							if (!data.icon) {
@@ -1202,13 +1193,13 @@ module.exports = function(app) {
 			let profile = 'ledger';
 			publicKey = publicKey.toString('hex');
 
-			let walletSelectPromise = electron.app.sqlLiteService.Wallet.findByPublicKey(publicKey);
+			let walletSelectPromise = Wallet.findByPublicKey(publicKey);
 			walletSelectPromise
 				.then(wallet => {
 					if (wallet) {
 						app.win.webContents.send(RPC_METHOD, actionId, actionName, null, wallet);
 					} else {
-						electron.app.sqlLiteService.Wallet.add({
+						Wallet.create({
 							publicKey,
 							profile
 						})
