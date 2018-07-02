@@ -11,10 +11,10 @@ const ActionLog = require('./models/action-log');
 const Token = require('./models/token');
 const WalletToken = require('./models/wallet-token');
 const Country = require('./models/country');
-const TransactionHistory = require('./models/transaction-history');
 const WalletSetting = require('./models/wallet-setting');
 const GuideSetting = require('./models/guide-setting');
 const Exchange = require('./models/exchange');
+const TxHistory = require('./models/tx-history');
 
 const path = require('path');
 const fs = require('fs-extra');
@@ -1250,10 +1250,9 @@ module.exports = function(app) {
 		actionName,
 		args
 	) {
-		electron.app.sqlLiteService.TxHistory.findByPublicKeyAndTokenSymbol(
-			args.publicKey,
-			args.tokenSymbol
-		)
+
+		TxHistory.findByPublicKeyAndTokenSymbol(args.publicKey, args.tokenSymbol)
+
 			.then(data => {
 				app.win.webContents.send(RPC_METHOD, actionId, actionName, null, data);
 			})
@@ -1268,10 +1267,7 @@ module.exports = function(app) {
 		actionName,
 		args
 	) {
-		electron.app.sqlLiteService.TxHistory.findByPublicKeyAndContractAddress(
-			args.publicKey,
-			args.contractAddress
-		)
+		TxHistory.findByPublicKeyAndContractAddress(args.publicKey, args.contractAddress)
 			.then(data => {
 				app.win.webContents.send(RPC_METHOD, actionId, actionName, null, data);
 			})
@@ -1292,7 +1288,7 @@ module.exports = function(app) {
 	};
 
 	controller.prototype.txHistoryAddOrUpdate = function(event, actionId, actionName, args) {
-		electron.app.sqlLiteService.TxHistory.addOrUpdate(args)
+		TxHistory.addOrUpdate(args)
 			.then(data => {
 				app.win.webContents.send(RPC_METHOD, actionId, actionName, null, data);
 			})
@@ -1302,7 +1298,7 @@ module.exports = function(app) {
 	};
 
 	controller.prototype.getTxHistoryByPublicKey = function(event, actionId, actionName, args) {
-		electron.app.sqlLiteService.TxHistory.findByPublicKey(args.publicKey)
+		TxHistory.findByPublicKey(args.publicKey)
 			.then(data => {
 				app.win.webContents.send(RPC_METHOD, actionId, actionName, null, data);
 			})
