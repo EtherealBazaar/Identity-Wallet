@@ -8,9 +8,9 @@ const Promise = require('bluebird'),
 	async = require('async'),
 	BigNumber = require('bignumber.js');
 
-const Wallet = require('./models/wallet');
-const WalletSetting = require('./models/wallet-setting');
-const TxHistory = require('./models/tx-history');
+const Wallet = require('../models/wallet');
+const WalletSetting = require('../models/wallet-setting');
+const TxHistory = require('../models/tx-history');
 
 let isSyncingMap = {};
 let syncingJobIsStarted = false;
